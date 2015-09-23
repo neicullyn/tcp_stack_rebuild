@@ -150,8 +150,9 @@ BEGIN
       RdU <= '0';
       WrU <= '0';
       TXDV <= '0';
+      wait for CLK_period;      
       RXDU <= input_data(i + 1);   
-      wait for CLK_period * 39;
+      wait for CLK_period * 38;
     end loop;
 
     for i in 0 to 16 loop  

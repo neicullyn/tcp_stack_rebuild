@@ -170,6 +170,8 @@ begin
 	TXDU <= TX_register;
 	RXDC <= RX_register;	
 	RXER <= ER_register;
+
+	RXC_DATA <= RXDU;
 	
 	MDIO_conf: process(CLK)
 	begin
@@ -416,15 +418,17 @@ begin
 				-- FCS computed, the RX_VALID represents whether error detected
 				case RX_state is
 					when Idle =>
+						RX_LOAD_INIT <= '1';
 						if (WrU = '1') then -- new packet incoming
 							RX_counter <= 0;
 							RX_state <= Preamble;
 							WrC <= '0';
+							RX_LOAD_INIT <= '0';
 						end if;
 						
 					when Preamble =>
 						if (WrU = '1') then
-							if (RX_counter = 21) then
+							if (RX_counter = 13) then
 								if (RXDU = X"00") then
 									RX_client <= IP;
 								else 
@@ -433,25 +437,12 @@ begin
 								RX_state <= Payload;
 								RX_interpacket_counter <= 0;
 								RX_counter <= 0;
-							elsif (RX_counter = 7) then
-								RX_counter <= RX_counter + 1;
-								RX_LOAD_INIT <= '1';
-							elsif (RX_counter = 8) then
-								RX_counter <= RX_counter + 1;
-								RX_LOAD_INIT <= '0';
-								RXC_DATA <= RXDU;
-								RX_D_VALID <= '1';
-								RX_CALC <= '1';
-							elsif (RX_counter > 8) then
-								RX_counter <= RX_counter + 1;
-								RX_LOAD_INIT <= '0';
-								RXC_DATA <= RXDU;
 								RX_D_VALID <= '1';
 								RX_CALC <= '1';
 							else
 								RX_counter <= RX_counter + 1;
-								RX_D_VALID <= '0';
-								RX_CALC <= '0';
+								RX_D_VALID <= '1';
+								RX_CALC <= '1';
 							end if;
 						else
 							RX_D_VALID <= '0';
@@ -463,7 +454,6 @@ begin
 							RX_interpacket_counter <= 0;
 							RX_counter <= RX_counter + 1;
 							RX_register <= RXDU;
-							RXC_DATA <= RXDU;
 							RX_D_VALID <= '1';
 							RX_CALC <= '1';
 							WrC <= '1';
@@ -475,7 +465,6 @@ begin
 							if (RX_interpacket_counter = 7) then
 								RX_counter <= 0;
 								WrC <= '0';
-								RXC_DATA <= RXDU;
 								RX_D_VALID <= '1';
 								RX_CALC <= '1';
 								RX_state <= FCS;
@@ -493,7 +482,6 @@ begin
 								ER_register <= RX_CRC_VALID;
 							else
 								RX_counter <= RX_counter + 1;
-								RXC_DATA <= RXDU;
 								RX_D_VALID <= '1';
 								RX_CALC <= '1';
 							end if;
@@ -516,6 +504,5 @@ begin
 			end if;
 		end if;
 	end process;
-
 end Behavioral;
 
